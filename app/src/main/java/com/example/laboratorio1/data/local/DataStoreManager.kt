@@ -44,7 +44,7 @@ class DataStoreManager(private val context: Context) {
         }
         .map { preferences ->
             PreferenciaViaje(
-                nombreViajero = preferences[KEY_NOMBRE_VIAJERO] ?: "Sebastián Santacruz",
+                nombreViajero = preferences[KEY_NOMBRE_VIAJERO] ?: "",
                 tipoTransporte = preferences[KEY_TIPO_TRANSPORTE] ?: PreferenciaViaje.TRANSPORTE_TREN,
                 soloBajaHuella = preferences[KEY_SOLO_BAJA_HUELLA] ?: true
             )

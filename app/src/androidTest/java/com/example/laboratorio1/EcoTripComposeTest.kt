@@ -22,7 +22,7 @@ class EcoTripComposeTest {
     @Test
     fun resumenScreen_muestraDestinoYDatosFormateados() {
         val testRoute = ResumenRoute(
-            nombreViajero = "Sebastián Santacruz",
+            nombreViajero = "Viajero EcoTrip",
             tipoTransporte = "Tren",
             soloBajaHuella = true,
             destino = "Parque Nacional Cotopaxi",
@@ -40,6 +40,6 @@ class EcoTripComposeTest {
         }
 
         composeTestRule.onNodeWithText("Parque Nacional Cotopaxi").assertExists()
-        composeTestRule.onNodeWithText("Viajero titular: Sebastián Santacruz").assertExists()
+        composeTestRule.onNodeWithText("Viajero titular: Viajero EcoTrip").assertExists()
     }
 }

@@ -26,12 +26,12 @@ class EcoTripValidationTest {
     @Test
     fun preferenciaViaje_inmutabilidadYTransportesValidos() {
         val pref = PreferenciaViaje(
-            nombreViajero = "Sebastián Santacruz",
+            nombreViajero = "Viajero EcoTrip",
             tipoTransporte = PreferenciaViaje.TRANSPORTE_BICICLETA,
             soloBajaHuella = true
         )
 
-        assertEquals("Sebastián Santacruz", pref.nombreViajero)
+        assertEquals("Viajero EcoTrip", pref.nombreViajero)
         assertEquals("Bicicleta", pref.tipoTransporte)
         assertTrue(pref.soloBajaHuella)
         assertTrue(PreferenciaViaje.LISTA_TRANSPORTES.contains(pref.tipoTransporte))
@@ -40,7 +40,7 @@ class EcoTripValidationTest {
     @Test
     fun rutasTipadas_serializacionYTypeSafetyExitosa() {
         val rutaOriginal = ResumenRoute(
-            nombreViajero = "Sebastián Santacruz",
+            nombreViajero = "Viajero EcoTrip",
             tipoTransporte = PreferenciaViaje.TRANSPORTE_TREN,
             soloBajaHuella = true,
             destino = "Reserva Ecológica Mindo Nambillo",
@@ -81,7 +81,7 @@ class EcoTripValidationTest {
     fun uiState_validacionEstrictaDeFormulario() {
         // Escenario A: Formulario completo y válido
         val estadoValido = EcoTripUiState(
-            nombreViajero = "Sebastián Santacruz",
+            nombreViajero = "Viajero EcoTrip",
             destino = "Parque Nacional Cotopaxi",
             diasDuracionInput = "3",
             diasDuracionValido = 3,

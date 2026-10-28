@@ -249,7 +249,7 @@ fun FormularioScreen(
                         value = uiState.nombreViajero,
                         onValueChange = onNombreChange,
                         label = { Text("Nombre del Viajero") },
-                        placeholder = { Text("Ej. Sebastián Santacruz") },
+                        placeholder = { Text("Ingrese nombre completo") },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Person,
