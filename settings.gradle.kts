@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SmartHomeSim"
+rootProject.name = "EcoTrip2026"
 include(":app")
