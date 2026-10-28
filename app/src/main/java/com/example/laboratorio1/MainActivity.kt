@@ -1,105 +1,62 @@
 package com.example.laboratorio1
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.AbstractSavedStateViewModelFactory
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import com.example.laboratorio1.data.local.DataStoreManager
+import com.example.laboratorio1.ui.navigation.EcoTripNavHost
+import com.example.laboratorio1.ui.theme.EcoTripTheme
+import com.example.laboratorio1.viewmodel.EcoTripViewModel
 
+/**
+ * Actividad Principal de EcoTrip 2026.
+ *
+ * Configura:
+ * - Entorno de ejecución adaptado a Android 16 (API 36) y Java 21 / JBR 21.
+ * - Modo Edge-to-Edge nativo para visualización completa de superficies y barras del sistema.
+ * - Inyección de dependencias para persistencia multinivel:
+ *   - Jetpack DataStore Preferences (Disco)
+ *   - SavedStateHandle (Proceso / Process Death) mediante AbstractSavedStateViewModelFactory.
+ * - Interfaz 100% declarativa en Jetpack Compose con Color Dinámico (Material You).
+ */
 class MainActivity : ComponentActivity() {
+
+    // ViewModel con enlace al SavedStateRegistry del ciclo de vida de la Actividad
+    private val viewModel: EcoTripViewModel by viewModels {
+        object : AbstractSavedStateViewModelFactory(this@MainActivity, null) {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(
+                key: String,
+                modelClass: Class<T>,
+                handle: SavedStateHandle
+            ): T {
+                val dataStoreManager = DataStoreManager(applicationContext)
+                return EcoTripViewModel(dataStoreManager, handle) as T
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
         setContent {
-            MaterialTheme {
+            // dynamicColor = true por defecto en Android 12+ (API 31+ / API 36)
+            EcoTripTheme(dynamicColor = true) {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    SmartHome()
+                    EcoTripNavHost(viewModel = viewModel)
                 }
             }
         }
     }
-}
-
-@Composable
-fun SmartHome() {
-    // Estado Hoisting: El padre posee la verdad
-    var isLightOn by remember { mutableStateOf(false) }
-
-    // Desafío: Variable de estado independiente para demostrar Skipping
-    var refreshCount by remember { mutableStateOf(0) }
-
-    // Trazabilidad: Log para observar recomposición del Padre
-    // Al leer refreshCount en este ámbito, SmartHome se recompondrá cuando cambie
-    Log.d("RECOMPOSE", "DIBUJANDO PADRE (SmartHome) - Contador: $refreshCount")
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Centro de Control Domótico",
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Enviamos el estado AL HIJO y una lambda para recibir cambios
-        LightBulb(isOn = isLightOn)
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Interruptor Principal")
-            Spacer(modifier = Modifier.width(16.dp))
-            Switch(
-                checked = isLightOn,
-                onCheckedChange = { isLightOn = it }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Desafío: Botón "Refrescar UI" que altera una variable de estado independiente
-        Button(
-            onClick = {
-                refreshCount++
-            }
-        ) {
-            Text("Refrescar UI ($refreshCount)")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "UI Refrescada: $refreshCount veces",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
-        )
-    }
-}
-
-@Composable
-fun LightBulb(isOn: Boolean) {
-    // Trazabilidad: Log para observar recomposición del Hijo
-    Log.d("RECOMPOSE", "DIBUJANDO HIJO (LightBulb)")
-    Icon(
-        imageVector = Icons.Default.Lightbulb,
-        contentDescription = "Bombilla",
-        modifier = Modifier.size(120.dp),
-        tint = if (isOn) Color.Yellow else Color.Gray
-    )
 }
