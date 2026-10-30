@@ -1,6 +1,7 @@
 package com.example.laboratorio1
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.laboratorio1.ui.screens.ResumenScreen
@@ -41,6 +42,6 @@ class EcoTripComposeTest {
 
         composeTestRule.onNodeWithText("Parque Nacional Cotopaxi").assertExists()
         composeTestRule.onNodeWithText("A nombre de Viajero EcoTrip").assertExists()
-        composeTestRule.onNodeWithText("Planear otro viaje").assertExists()
+        composeTestRule.onNodeWithContentDescription("Planear otro viaje").assertExists()
     }
 }

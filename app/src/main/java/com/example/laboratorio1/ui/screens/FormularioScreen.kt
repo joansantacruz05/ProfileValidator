@@ -136,9 +136,10 @@ fun FormularioScreen(
                     onValidarYNavegar()?.let(onRutaGenerada)
                 },
                 icon = {
+                    // El FAB extendido de Material 3 oculta su texto a TalkBack: la etiqueta va en el ícono
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null
+                        contentDescription = "Ver resumen"
                     )
                 },
                 text = {

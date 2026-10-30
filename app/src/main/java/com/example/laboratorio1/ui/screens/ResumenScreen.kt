@@ -131,9 +131,10 @@ fun ResumenScreen(
             ExtendedFloatingActionButton(
                 onClick = onVolverAInicio,
                 icon = {
+                    // El FAB extendido de Material 3 oculta su texto a TalkBack: la etiqueta va en el ícono
                     Icon(
                         imageVector = Icons.Default.RestartAlt,
-                        contentDescription = null
+                        contentDescription = "Planear otro viaje"
                     )
                 },
                 text = {
