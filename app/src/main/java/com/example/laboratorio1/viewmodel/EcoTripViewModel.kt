@@ -3,10 +3,15 @@ package com.example.laboratorio1.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.laboratorio1.data.local.DataStoreManager
-import com.example.laboratorio1.data.model.PreferenciaViaje
 import com.example.laboratorio1.navigation.ResumenRoute
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,19 +39,29 @@ class EcoTripViewModel(
         private const val KEY_DIAS_DURACION = "saved_key_dias_duracion"
         private const val KEY_ES_VIAJE_GRUPAL = "saved_key_es_viaje_grupal"
 
-        private const val DEFAULT_DESTINO = "Reserva Ecológica Mindo Nambillo"
-        private const val DEFAULT_DIAS = "4"
+        // Pausa de escritura tras la última tecla antes de guardar el nombre en disco
+        private const val ESPERA_GUARDADO_NOMBRE_MS = 500L
+
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = checkNotNull(this[APPLICATION_KEY])
+                EcoTripViewModel(
+                    dataStoreManager = DataStoreManager(application),
+                    savedStateHandle = createSavedStateHandle()
+                )
+            }
+        }
     }
 
     // Persistencia de Proceso: Enlace con SavedStateHandle
     val destinoFlow: StateFlow<String> = savedStateHandle.getStateFlow(
         KEY_DESTINO,
-        DEFAULT_DESTINO
+        EcoTripUiState.DESTINO_INICIAL
     )
 
     val diasDuracionInputFlow: StateFlow<String> = savedStateHandle.getStateFlow(
         KEY_DIAS_DURACION,
-        DEFAULT_DIAS
+        EcoTripUiState.DIAS_INICIAL.toString()
     )
 
     val esViajeGrupalFlow: StateFlow<Boolean> = savedStateHandle.getStateFlow(
@@ -54,8 +69,20 @@ class EcoTripViewModel(
         false
     )
 
+    // Nombre que el usuario está tecleando; null mientras no haya editado (se usa el de disco)
+    private val _nombreEnEdicion = MutableStateFlow<String?>(null)
+    private var guardadoNombreJob: Job? = null
+
     // Estado efímero para mensajes de notificación en UI
     private val _mensajeSnackbar = MutableStateFlow<String?>(null)
+
+    // El TextField lee el nombre de memoria, así el cursor no depende de la escritura en disco
+    private val preferenciasFlow = combine(
+        dataStoreManager.preferenciasViajeFlow,
+        _nombreEnEdicion
+    ) { prefs, nombreEnEdicion ->
+        nombreEnEdicion?.let { prefs.copy(nombreViajero = it) } ?: prefs
+    }
 
     /**
      * Estado consolidado y reactivo de la UI (Single Source of Truth).
@@ -63,7 +90,7 @@ class EcoTripViewModel(
      * y los mensajes efímeros de memoria.
      */
     val uiState: StateFlow<EcoTripUiState> = combine(
-        dataStoreManager.preferenciasViajeFlow,
+        preferenciasFlow,
         destinoFlow,
         diasDuracionInputFlow,
         esViajeGrupalFlow,
@@ -73,15 +100,21 @@ class EcoTripViewModel(
         // Desinfección numérica en tiempo real con toIntOrNull() y operador Elvis (?:)
         val diasParsed = diasInput.toIntOrNull()
         val errorDuracion = when {
-            diasInput.isBlank() -> "La duración no puede estar vacía."
-            diasParsed == null -> "Ingrese únicamente valores numéricos enteros."
-            diasParsed <= 0 -> "La duración debe ser mayor a 0 días."
-            diasParsed > 60 -> "El límite máximo para una expedición ecológica es de 60 días."
+            diasInput.isBlank() -> "Escribe cuántos días dura tu viaje."
+            diasParsed == null -> "Usa solo números enteros, por ejemplo 4."
+            diasParsed <= 0 -> "El viaje debe durar al menos 1 día."
+            diasParsed > 60 -> "El viaje puede durar como máximo 60 días."
             else -> null
         }
 
+        val errorNombre = if (prefs.nombreViajero.isBlank()) {
+            "Escribe tu nombre."
+        } else {
+            null
+        }
+
         val errorDestino = if (destino.isBlank()) {
-            "El destino ecológico es obligatorio."
+            "Escribe a dónde vas."
         } else {
             null
         }
@@ -94,6 +127,7 @@ class EcoTripViewModel(
             diasDuracionInput = diasInput,
             diasDuracionValido = diasParsed ?: 1,
             esViajeGrupal = esGrupal,
+            errorNombre = errorNombre,
             errorDestino = errorDestino,
             errorDuracion = errorDuracion,
             mensajeSnackbar = snackbarMsg
@@ -109,10 +143,14 @@ class EcoTripViewModel(
     // =========================================================================
 
     /**
-     * Actualiza el nombre del viajero y lo persiste asíncronamente en DataStore (Disco).
+     * Actualiza el nombre en memoria al instante y lo guarda en DataStore (Disco)
+     * cuando el usuario deja de escribir, en lugar de escribir en disco con cada tecla.
      */
     fun onNombreChanged(nuevoNombre: String) {
-        viewModelScope.launch {
+        _nombreEnEdicion.value = nuevoNombre
+        guardadoNombreJob?.cancel()
+        guardadoNombreJob = viewModelScope.launch {
+            delay(ESPERA_GUARDADO_NOMBRE_MS)
             dataStoreManager.actualizarNombre(nuevoNombre)
         }
     }
@@ -144,12 +182,11 @@ class EcoTripViewModel(
     }
 
     /**
-     * Actualiza el texto de duración en el SavedStateHandle (Proceso).
+     * Guarda el texto de duración tal cual lo escribe el usuario en el SavedStateHandle (Proceso).
+     * La validación con toIntOrNull() ocurre en uiState, que muestra el error correspondiente.
      */
     fun onDiasDuracionChanged(nuevoInput: String) {
-        // Filtrado preventivo para admitir sólo dígitos
-        val filtrado = nuevoInput.filter { it.isDigit() }
-        savedStateHandle[KEY_DIAS_DURACION] = filtrado
+        savedStateHandle[KEY_DIAS_DURACION] = nuevoInput
     }
 
     /**
@@ -167,9 +204,11 @@ class EcoTripViewModel(
         val currentState = uiState.value
 
         if (!currentState.esFormularioValido) {
-            _mensajeSnackbar.value = "Por favor, complete todos los campos requeridos con datos válidos."
+            _mensajeSnackbar.value = "Revisa los campos con error antes de continuar."
             return null
         }
+
+        guardarNombrePendiente()
 
         // Construcción segura libre de nulos e inyección de tipos directos
         return ResumenRoute(
@@ -189,19 +228,12 @@ class EcoTripViewModel(
         _mensajeSnackbar.value = null
     }
 
-    /**
-     * Factoría personalizada para inyectar dependencias (DataStoreManager y SavedStateHandle).
-     */
-    class Factory(
-        private val dataStoreManager: DataStoreManager,
-        private val savedStateHandle: SavedStateHandle
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(EcoTripViewModel::class.java)) {
-                return EcoTripViewModel(dataStoreManager, savedStateHandle) as T
-            }
-            throw IllegalArgumentException("Clase de ViewModel desconocida: ${modelClass.name}")
+    // Al confirmar la ruta no se espera la pausa: el nombre se escribe en disco de inmediato
+    private fun guardarNombrePendiente() {
+        val nombre = _nombreEnEdicion.value ?: return
+        guardadoNombreJob?.cancel()
+        guardadoNombreJob = viewModelScope.launch {
+            dataStoreManager.actualizarNombre(nombre)
         }
     }
 }

@@ -78,15 +78,3 @@ fun EcoTripTheme(
         content = content
     )
 }
-
-/**
- * Alias de compatibilidad hacia atrás
- */
-@Composable
-fun Laboratorio1Theme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
-) {
-    EcoTripTheme(darkTheme = darkTheme, dynamicColor = dynamicColor, content = content)
-}

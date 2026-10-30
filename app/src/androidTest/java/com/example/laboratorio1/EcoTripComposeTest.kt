@@ -40,6 +40,7 @@ class EcoTripComposeTest {
         }
 
         composeTestRule.onNodeWithText("Parque Nacional Cotopaxi").assertExists()
-        composeTestRule.onNodeWithText("Viajero titular: Viajero EcoTrip").assertExists()
+        composeTestRule.onNodeWithText("A nombre de Viajero EcoTrip").assertExists()
+        composeTestRule.onNodeWithText("Planear otro viaje").assertExists()
     }
 }

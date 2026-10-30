@@ -2,19 +2,14 @@ package com.example.laboratorio1.navigation
 
 import kotlinx.serialization.Serializable
 
-/**
- * Contrato de rutas fuertemente tipadas (Type-Safety) para el grafo de navegación de EcoTrip 2026.
- * Diseñadas para su compilación e inyección declarativa en Jetpack Navigation Compose 2.8+.
- * Elimina completamente los riesgos de cadenas de texto erróneas (typos) y casteo inseguro de Bundles.
- */
-sealed interface EcoTripDestination
+// Rutas tipadas (@Serializable) para Navigation Compose 2.8+: sin Strings de ruta ni casteos de Bundle.
 
 /**
  * Ruta tipada para la Pantalla 1: Formulario ultra-resiliente y configuración de viaje.
  * Implementada como singleton serializable (`data object`) al no requerir argumentos de entrada.
  */
 @Serializable
-data object FormularioRoute : EcoTripDestination
+data object FormularioRoute
 
 /**
  * Ruta tipada para la Pantalla 2: Resumen dinámico y confirmación de la ruta ecológica.
@@ -35,4 +30,4 @@ data class ResumenRoute(
     val destino: String,
     val diasDuracion: Int,
     val esViajeGrupal: Boolean
-) : EcoTripDestination
+)

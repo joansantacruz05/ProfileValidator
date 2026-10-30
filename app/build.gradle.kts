@@ -7,10 +7,11 @@ plugins {
 
 android {
     // Bloqueamos a la API 36 definida para el curso
-    namespace = "com.example.Laboratorio1"
+    namespace = "com.example.laboratorio1"
     compileSdk = 36
 
     defaultConfig {
+        applicationId = "com.example.laboratorio1"
         // MinSdk 26 asegura compatibilidad con el 90% del mercado actual
         minSdk = 26
         targetSdk = 36
@@ -48,8 +49,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.datastore.preferences)
-    implementation("androidx.compose.material:material-icons-core")
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.compose.material.icons.extended)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

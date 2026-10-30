@@ -30,5 +30,3 @@ val EcoTripTypography = Typography(
         letterSpacing = 0.5.sp
     )
 )
-
-val Typography = EcoTripTypography

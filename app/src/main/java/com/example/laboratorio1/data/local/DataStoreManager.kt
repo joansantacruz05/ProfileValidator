@@ -51,21 +51,6 @@ class DataStoreManager(private val context: Context) {
         }
 
     /**
-     * Persiste de forma asíncrona y transaccional todas las preferencias globales en disco.
-     */
-    suspend fun guardarPreferenciasGlobales(
-        nombre: String,
-        transporte: String,
-        soloBajaHuella: Boolean
-    ) {
-        context.dataStore.edit { preferences ->
-            preferences[KEY_NOMBRE_VIAJERO] = nombre
-            preferences[KEY_TIPO_TRANSPORTE] = transporte
-            preferences[KEY_SOLO_BAJA_HUELLA] = soloBajaHuella
-        }
-    }
-
-    /**
      * Actualiza únicamente el nombre del viajero en disco.
      */
     suspend fun actualizarNombre(nombre: String) {

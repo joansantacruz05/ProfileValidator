@@ -1,6 +1,5 @@
 package com.example.laboratorio1.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -21,14 +20,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.DirectionsBike
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DirectionsBike
 import androidx.compose.material.icons.filled.DirectionsTransit
 import androidx.compose.material.icons.filled.ElectricCar
 import androidx.compose.material.icons.filled.EnergySavingsLeaf
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,7 +35,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -51,16 +47,16 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.laboratorio1.data.model.PreferenciaViaje
 import com.example.laboratorio1.navigation.ResumenRoute
 import com.example.laboratorio1.viewmodel.EcoTripUiState
-import kotlinx.coroutines.launch
 
 /**
  * Pantalla 1: Formulario ultra-resiliente y de configuración global de EcoTrip 2026.
@@ -69,7 +65,7 @@ import kotlinx.coroutines.launch
  * Su diseño se basa 100% en Material Design 3 con roles cromáticos semánticos adaptativos.
  *
  * Sometida a resiliencia multinivel:
- * - Persistencia en Disco (DataStore): Nombre y switch de huella de carbono.
+ * - Persistencia en Disco (DataStore): Nombre, transporte y switch de huella de carbono.
  * - Persistencia de Proceso (SavedStateHandle): Destino y duración frente a rotación y muerte de proceso.
  * - Persistencia en Memoria (ViewModel): Validación y elevación de estado (State Hoisting).
  */
@@ -90,9 +86,8 @@ fun FormularioScreen(
 ) {
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
 
-    // Gestión reactiva del Snackbar
+    // Único punto que muestra el Snackbar: el mensaje lo emite el ViewModel (UDF)
     LaunchedEffect(uiState.mensajeSnackbar) {
         uiState.mensajeSnackbar?.let { mensaje ->
             snackbarHostState.showSnackbar(mensaje)
@@ -113,7 +108,7 @@ fun FormularioScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Planificación Resiliente de Rutas",
+                            text = "Planifica tu viaje ecológico",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -122,7 +117,7 @@ fun FormularioScreen(
                 navigationIcon = {
                     Icon(
                         imageVector = Icons.Default.EnergySavingsLeaf,
-                        contentDescription = "Logo EcoTrip",
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .padding(horizontal = 12.dp)
@@ -138,24 +133,17 @@ fun FormularioScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = {
-                    val ruta = onValidarYNavegar()
-                    if (ruta != null) {
-                        onRutaGenerada(ruta)
-                    } else {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Complete todos los campos obligatorios correctamente.")
-                        }
-                    }
+                    onValidarYNavegar()?.let(onRutaGenerada)
                 },
                 icon = {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Confirmar Ruta"
+                        contentDescription = null
                     )
                 },
                 text = {
                     Text(
-                        text = "Confirmar Ruta",
+                        text = "Ver resumen",
                         fontWeight = FontWeight.SemiBold
                     )
                 },
@@ -196,12 +184,12 @@ fun FormularioScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "Turismo Ecológico Sostenible 2026",
+                            text = "Viaja dejando menos huella",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Configure su itinerario protegido con resiliencia multinivel (DataStore + SavedStateHandle).",
+                            text = "Completa estos datos y te mostramos cuánto CO2 te ahorras con tu viaje.",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -231,7 +219,7 @@ fun FormularioScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Preferencias Globales (Persistencia en Disco - DataStore)",
+                            text = "Tus preferencias",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -239,7 +227,7 @@ fun FormularioScreen(
                     }
 
                     Text(
-                        text = "Estos parámetros perduran permanentemente aunque la aplicación se cierre por completo.",
+                        text = "Las guardamos para la próxima vez que abras la app.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -248,8 +236,8 @@ fun FormularioScreen(
                     OutlinedTextField(
                         value = uiState.nombreViajero,
                         onValueChange = onNombreChange,
-                        label = { Text("Nombre del Viajero") },
-                        placeholder = { Text("Ingrese nombre completo") },
+                        label = { Text("Tu nombre") },
+                        placeholder = { Text("Nombre y apellido") },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Person,
@@ -257,13 +245,26 @@ fun FormularioScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
+                        isError = uiState.errorNombre != null,
+                        supportingText = {
+                            uiState.errorNombre?.let { error ->
+                                Text(
+                                    text = error,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Words,
+                            imeAction = ImeAction.Next
+                        ),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     // Selector de Transporte Ecológico
                     Text(
-                        text = "Medio de transporte ecológico predilecto:",
+                        text = "¿Cómo prefieres moverte?",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -287,7 +288,7 @@ fun FormularioScreen(
                                 leadingIcon = {
                                     Icon(
                                         imageVector = if (seleccionado) Icons.Default.Check else icono,
-                                        contentDescription = transporte,
+                                        contentDescription = null,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 },
@@ -310,12 +311,12 @@ fun FormularioScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Solo rutas de baja huella de carbono",
+                                text = "Solo rutas que contaminen poco",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Prioriza trayectos con emisiones netas mínimas de CO2.",
+                                text = "Te mostramos los trayectos que menos CO2 generan.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -360,25 +361,19 @@ fun FormularioScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Configuración de Ruta (SavedStateHandle - Proceso)",
+                            text = "Tu viaje",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.tertiary
                         )
                     }
 
-                    Text(
-                        text = "Datos temporales blindados contra rotación de pantalla y muerte de proceso (Process Death).",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
                     // Destino
                     OutlinedTextField(
                         value = uiState.destino,
                         onValueChange = onDestinoChange,
-                        label = { Text("Destino Ecológico") },
-                        placeholder = { Text("Ej. Reserva Ecológica Mindo Nambillo") },
+                        label = { Text("¿A dónde vas?") },
+                        placeholder = { Text("Ej.: Mindo") },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.LocationOn,
@@ -403,8 +398,8 @@ fun FormularioScreen(
                     OutlinedTextField(
                         value = uiState.diasDuracionInput,
                         onValueChange = onDiasDuracionChange,
-                        label = { Text("Duración Estimada (días)") },
-                        placeholder = { Text("Ej. 4") },
+                        label = { Text("¿Cuántos días?") },
+                        placeholder = { Text("Ej.: 4") },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.CalendarToday,
@@ -415,15 +410,10 @@ fun FormularioScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         isError = uiState.errorDuracion != null,
                         supportingText = {
-                            if (uiState.errorDuracion != null) {
+                            uiState.errorDuracion?.let { error ->
                                 Text(
-                                    text = uiState.errorDuracion,
+                                    text = error,
                                     color = MaterialTheme.colorScheme.error
-                                )
-                            } else {
-                                Text(
-                                    text = "Valor validado: ${uiState.diasDuracionValido} día(s)",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         },
@@ -439,12 +429,12 @@ fun FormularioScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Expedición Grupal Colectiva",
+                                text = "Viajo en grupo",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Activar si viaja un grupo de 4 o más aventureros.",
+                                text = "Actívalo si van 4 personas o más.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -463,42 +453,6 @@ fun FormularioScreen(
                             } else null
                         )
                     }
-                }
-            }
-
-            // =========================================================================
-            // SECCIÓN 3: MONITOR DE RESILIENCIA MULTINIVEL (AUDITORÍA VISUAL)
-            // =========================================================================
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Security,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Auditoría de Resiliencia Multinivel Activa",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Text(
-                        text = "• Nivel Disco: DataStore sincroniza nombre y huella de carbono asíncronamente.\n" +
-                               "• Nivel Proceso: SavedStateHandle garantiza supervivencia ante 'Don't keep activities'.\n" +
-                               "• Nivel Memoria: EcoTripViewModel gestiona UDF y State Hoisting reactivo.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
 

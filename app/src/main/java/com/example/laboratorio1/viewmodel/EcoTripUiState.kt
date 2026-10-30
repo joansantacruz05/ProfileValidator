@@ -16,12 +16,13 @@ data class EcoTripUiState(
     val soloBajaHuella: Boolean = true,
 
     // Persistencia de Proceso (SavedStateHandle)
-    val destino: String = "",
-    val diasDuracionInput: String = "3",
-    val diasDuracionValido: Int = 3,
+    val destino: String = DESTINO_INICIAL,
+    val diasDuracionInput: String = DIAS_INICIAL.toString(),
+    val diasDuracionValido: Int = DIAS_INICIAL,
     val esViajeGrupal: Boolean = false,
 
     // Validaciones reactivas y control de errores
+    val errorNombre: String? = null,
     val errorDestino: String? = null,
     val errorDuracion: String? = null,
     val mensajeSnackbar: String? = null
@@ -34,6 +35,13 @@ data class EcoTripUiState(
         get() = nombreViajero.isNotBlank() &&
                 destino.isNotBlank() &&
                 diasDuracionValido > 0 &&
+                errorNombre == null &&
                 errorDestino == null &&
                 errorDuracion == null
+
+    companion object {
+        // Única fuente de los valores iniciales: la usan tanto este estado como el SavedStateHandle
+        const val DESTINO_INICIAL = "Reserva Ecológica Mindo Nambillo"
+        const val DIAS_INICIAL = 4
+    }
 }

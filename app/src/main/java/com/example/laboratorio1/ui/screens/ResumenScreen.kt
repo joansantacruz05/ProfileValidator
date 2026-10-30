@@ -1,11 +1,7 @@
 package com.example.laboratorio1.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,40 +18,36 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsBike
 import androidx.compose.material.icons.filled.Co2
-import androidx.compose.material.icons.filled.DirectionsBike
 import androidx.compose.material.icons.filled.DirectionsTransit
 import androidx.compose.material.icons.filled.ElectricCar
 import androidx.compose.material.icons.filled.EnergySavingsLeaf
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Park
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.laboratorio1.data.model.PreferenciaViaje
+import com.example.laboratorio1.domain.ImpactoAmbiental
 import com.example.laboratorio1.navigation.ResumenRoute
 
 /**
@@ -67,7 +59,7 @@ import com.example.laboratorio1.navigation.ResumenRoute
  * 3. Adaptabilidad cromática nativa a Material You (Color Dinámico extraído del wallpaper).
  * 4. Limpieza higiénica del Back Stack mediante popUpTo y launchSingleTop.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResumenScreen(
     route: ResumenRoute,
@@ -76,33 +68,29 @@ fun ResumenScreen(
 ) {
     val scrollState = rememberScrollState()
 
-    // Estimación ecológica reactiva mediante operadores idiomáticos
-    val factorTransporte = when (route.tipoTransporte) {
-        PreferenciaViaje.TRANSPORTE_BICICLETA -> 0.00
-        PreferenciaViaje.TRANSPORTE_TREN -> 0.18
-        else -> 0.25 // Vehículo Eléctrico
+    val impacto = remember(route) {
+        ImpactoAmbiental.calcular(
+            tipoTransporte = route.tipoTransporte,
+            diasDuracion = route.diasDuracion,
+            esViajeGrupal = route.esViajeGrupal,
+            soloBajaHuella = route.soloBajaHuella
+        )
     }
-    val multiplicadorGrupal = if (route.esViajeGrupal) 1.8 else 1.0
-    val emisionAhorradaKg = String.format(
-        java.util.Locale.US,
-        "%.1f",
-        (45.0 - (factorTransporte * 20.0)) * route.diasDuracion * multiplicadorGrupal
-    )
-    val arbolesEquivalentes = (route.diasDuracion * (if (route.soloBajaHuella) 3 else 1)).coerceAtLeast(1)
-    val ecoPuntos = (route.diasDuracion * 150 * (if (route.esViajeGrupal) 2 else 1))
 
     // Formateo idiomático con plantillas de texto de Kotlin
     val descripcionModalidad = if (route.esViajeGrupal) {
-        "Expedición Colectiva Sostenible (Grupo ≥ 4 personas)"
+        "En grupo (4 personas o más)"
     } else {
-        "Expedición Individual / Pareja de Bajo Impacto"
+        "Solo o en pareja"
     }
 
-    val certificacionHuella = if (route.soloBajaHuella) {
-        "Certificación Nivel Oro: Rutas de Cero Emisiones Netas"
+    val descripcionRutas = if (route.soloBajaHuella) {
+        "Solo las que contaminan poco"
     } else {
-        "Estándar Verde: Compensación Forestal Activa"
+        "Todas las disponibles"
     }
+
+    val textoDias = if (route.diasDuracion == 1) "1 día" else "${route.diasDuracion} días"
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -117,7 +105,7 @@ fun ResumenScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Resumen de Ruta Confirmada",
+                            text = "Resumen de tu viaje",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -127,16 +115,7 @@ fun ResumenScreen(
                     IconButton(onClick = onVolverAInicio) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Regresar al formulario",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onVolverAInicio) {
-                        Icon(
-                            imageVector = Icons.Default.RestartAlt,
-                            contentDescription = "Reiniciar y Salir limpiando el Back Stack",
+                            contentDescription = "Volver",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -145,6 +124,26 @@ fun ResumenScreen(
                     containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
+            )
+        },
+        floatingActionButton = {
+            // Retorno al formulario limpiando el Back Stack (popUpTo + launchSingleTop)
+            ExtendedFloatingActionButton(
+                onClick = onVolverAInicio,
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.RestartAlt,
+                        contentDescription = null
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Planear otro viaje",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     ) { innerPadding ->
@@ -184,7 +183,7 @@ fun ResumenScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Ruta Validada por Compilador (Type-Safe)",
+                                text = "Tu viaje está listo",
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -197,7 +196,7 @@ fun ResumenScreen(
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         ) {
                             Text(
-                                text = "${route.diasDuracion} días",
+                                text = textoDias,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -221,7 +220,7 @@ fun ResumenScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Viajero titular: ${route.nombreViajero}",
+                            text = "A nombre de ${route.nombreViajero}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -243,7 +242,7 @@ fun ResumenScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Configuración Detallada del Itinerario",
+                        text = "Detalles del viaje",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -259,29 +258,22 @@ fun ResumenScreen(
                     }
                     FilaDetalle(
                         icono = transporteIcon,
-                        titulo = "Transporte Seleccionado",
-                        valor = "Movilidad mediante ${route.tipoTransporte}"
+                        titulo = "Transporte",
+                        valor = route.tipoTransporte
                     )
 
                     // Fila Modalidad
                     FilaDetalle(
                         icono = Icons.Default.Groups,
-                        titulo = "Tipo de Expedición",
+                        titulo = "Con quién viajas",
                         valor = descripcionModalidad
                     )
 
                     // Fila Huella
                     FilaDetalle(
                         icono = Icons.Default.EnergySavingsLeaf,
-                        titulo = "Certificación Ecológica",
-                        valor = certificacionHuella
-                    )
-
-                    // Fila Destino y Tiempo
-                    FilaDetalle(
-                        icono = Icons.Default.LocationOn,
-                        titulo = "Segmento de Destino",
-                        valor = "Tramo planificado: ${route.destino} por un periodo estricto de ${route.diasDuracion} jornadas continuas."
+                        titulo = "Rutas",
+                        valor = descripcionRutas
                     )
                 }
             }
@@ -301,7 +293,7 @@ fun ResumenScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Impacto Ambiental Proyectado EcoTrip 2026",
+                        text = "El impacto de tu viaje",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -312,115 +304,25 @@ fun ResumenScreen(
                     ) {
                         ColumnaImpacto(
                             icono = Icons.Default.Co2,
-                            valor = "-$emisionAhorradaKg kg",
-                            etiqueta = "CO2 Mitigado"
+                            valor = "${impacto.co2MitigadoKg} kg",
+                            etiqueta = "CO2 que evitas"
                         )
                         ColumnaImpacto(
                             icono = Icons.Default.Park,
-                            valor = "+$arbolesEquivalentes",
-                            etiqueta = "Árboles Salvos"
+                            valor = "${impacto.arbolesEquivalentes}",
+                            etiqueta = "Árboles equivalentes"
                         )
                         ColumnaImpacto(
                             icono = Icons.Default.Stars,
-                            valor = "$ecoPuntos",
-                            etiqueta = "EcoPuntos 2026"
+                            valor = "${impacto.ecoPuntos}",
+                            etiqueta = "EcoPuntos"
                         )
                     }
                 }
             }
 
-            // =========================================================================
-            // DEMOSTRACIÓN DE IDENTIDAD VISUAL ADAPTATIVA (MATERIAL YOU)
-            // =========================================================================
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Palette,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Identidad Visual Adaptativa (Material You)",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Text(
-                        text = "Esta pantalla se acopla dinámicamente a la paleta cromática generada por el fondo de pantalla (Wallpaper) del sistema mediante MaterialTheme.colorScheme, sin valores hexadecimales estáticos.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Text(
-                        text = "Muestras de Roles Cromáticos Semánticos del Sistema:",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        MuestraColor(
-                            nombre = "Primary",
-                            colorFondo = MaterialTheme.colorScheme.primary,
-                            colorTexto = MaterialTheme.colorScheme.onPrimary
-                        )
-                        MuestraColor(
-                            nombre = "PrimaryContainer",
-                            colorFondo = MaterialTheme.colorScheme.primaryContainer,
-                            colorTexto = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        MuestraColor(
-                            nombre = "SecondaryContainer",
-                            colorFondo = MaterialTheme.colorScheme.secondaryContainer,
-                            colorTexto = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                        MuestraColor(
-                            nombre = "TertiaryContainer",
-                            colorFondo = MaterialTheme.colorScheme.tertiaryContainer,
-                            colorTexto = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    }
-                }
-            }
-
-            // =========================================================================
-            // BOTÓN DE ACCIÓN: RETORNO HIGIÉNICO (popUpTo + launchSingleTop)
-            // =========================================================================
-            Button(
-                onClick = onVolverAInicio,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.RestartAlt,
-                    contentDescription = null
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Volver al Planificador (Limpiar Back Stack)",
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            // Espaciador inferior para evitar que el Extended FAB oculte información al final del scroll
+            Spacer(modifier = Modifier.height(72.dp))
         }
     }
 }
@@ -486,27 +388,6 @@ private fun ColumnaImpacto(
             text = etiqueta,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSecondaryContainer
-        )
-    }
-}
-
-@Composable
-private fun MuestraColor(
-    nombre: String,
-    colorFondo: androidx.compose.ui.graphics.Color,
-    colorTexto: androidx.compose.ui.graphics.Color
-) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(colorFondo)
-            .padding(horizontal = 10.dp, vertical = 6.dp)
-    ) {
-        Text(
-            text = nombre,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = colorTexto
         )
     }
 }
