@@ -25,15 +25,22 @@ data class EcoTripUiState(
     val errorNombre: String? = null,
     val errorDestino: String? = null,
     val errorDuracion: String? = null,
+    val avisoDuracion: String? = null,
     val mensajeSnackbar: String? = null
 ) {
+    /**
+     * Caso 3: estado derivado que habilita el botón "Planificar Ruta".
+     * Se recalcula con cada pulsación de tecla porque el ViewModel emite un estado nuevo (UDF).
+     */
+    val botonPlanificarHabilitado: Boolean
+        get() = nombreViajero.trim().length >= MIN_CARACTERES_NOMBRE && destino.isNotBlank()
+
     /**
      * Valida de manera segura si el formulario cuenta con los requisitos mínimos
      * para realizar una transición tipada sin anomalías.
      */
     val esFormularioValido: Boolean
-        get() = nombreViajero.isNotBlank() &&
-                destino.isNotBlank() &&
+        get() = botonPlanificarHabilitado &&
                 diasDuracionValido > 0 &&
                 errorNombre == null &&
                 errorDestino == null &&
@@ -43,5 +50,6 @@ data class EcoTripUiState(
         // Única fuente de los valores iniciales: la usan tanto este estado como el SavedStateHandle
         const val DESTINO_INICIAL = "Reserva Ecológica Mindo Nambillo"
         const val DIAS_INICIAL = 4
+        const val MIN_CARACTERES_NOMBRE = 4
     }
 }

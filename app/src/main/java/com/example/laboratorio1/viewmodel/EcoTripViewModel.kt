@@ -1,5 +1,6 @@
 package com.example.laboratorio1.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -41,6 +42,12 @@ class EcoTripViewModel(
 
         // Pausa de escritura tras la última tecla antes de guardar el nombre en disco
         private const val ESPERA_GUARDADO_NOMBRE_MS = 500L
+
+        // Caso 1: código de reserva inyectado en ResumenRoute al planificar la ruta
+        const val TICKET_CODE_POR_DEFECTO = "ECO-2026-XYZ"
+
+        // Caso 4: etiqueta para filtrar en Logcat la destrucción del ViewModel
+        private const val TAG_LIFECYCLE = "EcoTrip_Lifecycle"
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -97,20 +104,27 @@ class EcoTripViewModel(
         _mensajeSnackbar
     ) { prefs, destino, diasInput, esGrupal, snackbarMsg ->
 
-        // Desinfección numérica en tiempo real con toIntOrNull() y operador Elvis (?:)
-        val diasParsed = diasInput.toIntOrNull()
+        // Caso 5: conversión segura; si el texto no es un número entero se rescata con 1 día
+        val diasDuracion = diasInput.trim().toIntOrNull() ?: 1
+
+        val avisoDuracion = if (diasInput.trim().toIntOrNull() == null) {
+            "No es un número: contaremos 1 día."
+        } else {
+            null
+        }
+
         val errorDuracion = when {
-            diasInput.isBlank() -> "Escribe cuántos días dura tu viaje."
-            diasParsed == null -> "Usa solo números enteros, por ejemplo 4."
-            diasParsed <= 0 -> "El viaje debe durar al menos 1 día."
-            diasParsed > 60 -> "El viaje puede durar como máximo 60 días."
+            diasDuracion <= 0 -> "El viaje debe durar al menos 1 día."
+            diasDuracion > 60 -> "El viaje puede durar como máximo 60 días."
             else -> null
         }
 
-        val errorNombre = if (prefs.nombreViajero.isBlank()) {
-            "Escribe tu nombre."
-        } else {
-            null
+        // Caso 3: el nombre se valida con cada pulsación de tecla (mínimo 4 caracteres)
+        val errorNombre = when {
+            prefs.nombreViajero.isBlank() -> "Escribe tu nombre."
+            prefs.nombreViajero.trim().length < EcoTripUiState.MIN_CARACTERES_NOMBRE ->
+                "Escribe al menos ${EcoTripUiState.MIN_CARACTERES_NOMBRE} letras."
+            else -> null
         }
 
         val errorDestino = if (destino.isBlank()) {
@@ -125,11 +139,12 @@ class EcoTripViewModel(
             soloBajaHuella = prefs.soloBajaHuella,
             destino = destino,
             diasDuracionInput = diasInput,
-            diasDuracionValido = diasParsed ?: 1,
+            diasDuracionValido = diasDuracion,
             esViajeGrupal = esGrupal,
             errorNombre = errorNombre,
             errorDestino = errorDestino,
             errorDuracion = errorDuracion,
+            avisoDuracion = avisoDuracion,
             mensajeSnackbar = snackbarMsg
         )
     }.stateIn(
@@ -183,7 +198,7 @@ class EcoTripViewModel(
 
     /**
      * Guarda el texto de duración tal cual lo escribe el usuario en el SavedStateHandle (Proceso).
-     * La validación con toIntOrNull() ocurre en uiState, que muestra el error correspondiente.
+     * La conversión segura con toIntOrNull() ?: 1 ocurre en uiState.
      */
     fun onDiasDuracionChanged(nuevoInput: String) {
         savedStateHandle[KEY_DIAS_DURACION] = nuevoInput
@@ -217,7 +232,8 @@ class EcoTripViewModel(
             soloBajaHuella = currentState.soloBajaHuella,
             destino = currentState.destino.trim(),
             diasDuracion = currentState.diasDuracionValido,
-            esViajeGrupal = currentState.esViajeGrupal
+            esViajeGrupal = currentState.esViajeGrupal,
+            ticketCode = TICKET_CODE_POR_DEFECTO
         )
     }
 
@@ -235,5 +251,14 @@ class EcoTripViewModel(
         guardadoNombreJob = viewModelScope.launch {
             dataStoreManager.actualizarNombre(nombre)
         }
+    }
+
+    /**
+     * Caso 4: Android lo invoca justo antes de destruir el ViewModel, cuando la entrada del
+     * formulario sale de forma permanente del Back Stack. No se ejecuta al rotar la pantalla.
+     */
+    override fun onCleared() {
+        super.onCleared()
+        Log.d(TAG_LIFECYCLE, "Memoria del viaje liberada.")
     }
 }

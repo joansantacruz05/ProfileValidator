@@ -18,7 +18,7 @@ import org.junit.Test
  * 1. Inmutabilidad y valores por defecto del modelo PreferenciaViaje.
  * 2. Type-Safety y serialización JSON de las rutas de navegación declarativa.
  * 3. Desinfección numérica en tiempo real mediante toIntOrNull() y operador Elvis (?:).
- * 4. Lógica de blindaje y validación reactiva del estado EcoTripUiState.
+ * 4. Lógica de blindaje y validación reactiva del estado EcoTripUiState (botón "Planificar Ruta").
  * 5. Fórmulas de impacto ambiental (CO2 mitigado, árboles y EcoPuntos).
  */
 class EcoTripValidationTest {
@@ -45,7 +45,8 @@ class EcoTripValidationTest {
             soloBajaHuella = true,
             destino = "Reserva Ecológica Mindo Nambillo",
             diasDuracion = 4,
-            esViajeGrupal = true
+            esViajeGrupal = true,
+            ticketCode = "ECO-2026-XYZ"
         )
 
         // Verificamos serialización estricta de Kotlin Serialization
@@ -56,6 +57,7 @@ class EcoTripValidationTest {
         assertEquals("Reserva Ecológica Mindo Nambillo", rutaDeserializada.destino)
         assertEquals(4, rutaDeserializada.diasDuracion)
         assertTrue(rutaDeserializada.esViajeGrupal)
+        assertEquals("ECO-2026-XYZ", rutaDeserializada.ticketCode)
 
         // Verificamos singleton de FormularioRoute
         val formJson = Json.encodeToString(FormularioRoute)
@@ -75,6 +77,30 @@ class EcoTripValidationTest {
         assertEquals(1, entradaInvalidaTexto.toIntOrNull() ?: 1)
         assertEquals(1, entradaVacia.toIntOrNull() ?: 1)
         assertEquals(1, entradaNula?.toIntOrNull() ?: 1)
+
+        // Caso 5: entradas alfanuméricas del enunciado
+        assertEquals(1, "error".trim().toIntOrNull() ?: 1)
+        assertEquals(1, "5 días".trim().toIntOrNull() ?: 1)
+        assertEquals(1, "no sé".trim().toIntOrNull() ?: 1)
+    }
+
+    @Test
+    fun uiState_botonPlanificarSeHabilitaConNombreDeCuatroCaracteres() {
+        val estadoTresLetras = EcoTripUiState(
+            nombreViajero = "Ana",
+            destino = "Parque Nacional Cotopaxi"
+        )
+        assertFalse(estadoTresLetras.botonPlanificarHabilitado)
+
+        val estadoCuatroLetras = estadoTresLetras.copy(nombreViajero = "Anas")
+        assertTrue(estadoCuatroLetras.botonPlanificarHabilitado)
+
+        // Los espacios no cuentan como caracteres del nombre
+        val estadoConEspacios = estadoTresLetras.copy(nombreViajero = " Ana ")
+        assertFalse(estadoConEspacios.botonPlanificarHabilitado)
+
+        val estadoSinDestino = estadoCuatroLetras.copy(destino = "")
+        assertFalse(estadoSinDestino.botonPlanificarHabilitado)
     }
 
     @Test

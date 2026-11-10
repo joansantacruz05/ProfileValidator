@@ -57,7 +57,8 @@ import com.example.laboratorio1.navigation.ResumenRoute
  * 1. Consumo seguro de datos inyectados mediante Type-Safety con Kotlin Serialization.
  * 2. Formateo declarativo con plantillas de cadenas idiomáticas de Kotlin ("$variable").
  * 3. Adaptabilidad cromática nativa a Material You (Color Dinámico extraído del wallpaper).
- * 4. Limpieza higiénica del Back Stack mediante popUpTo y launchSingleTop.
+ * 4. Retorno al formulario que cancela el itinerario: el NavHost saca del Back Stack la entrada
+ *    del formulario y su ViewModel se destruye (onCleared).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -157,13 +158,13 @@ fun ResumenScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // =========================================================================
-            // HERO CARD: DESTINO Y VIAJERO (COLOR DINÁMICO PRIMARY CONTAINER)
+            // HERO CARD: DESTINO Y VIAJERO (COLOR DINÁMICO TERTIARY CONTAINER)
             // =========================================================================
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                 ),
                 shape = RoundedCornerShape(20.dp)
             ) {
@@ -180,21 +181,21 @@ fun ResumenScreen(
                             Icon(
                                 imageVector = Icons.Default.Verified,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Tu viaje está listo",
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
                         }
 
                         Surface(
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onTertiary
                         ) {
                             Text(
                                 text = textoDias,
@@ -226,6 +227,19 @@ fun ResumenScreen(
                             fontWeight = FontWeight.Medium
                         )
                     }
+
+                    Text(
+                        text = "Duración estimada: ${route.diasDuracion} días",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    // Caso 1: parámetro ticketCode leído desde la ruta tipada ResumenRoute
+                    Text(
+                        text = "Código de Reserva: ${route.ticketCode}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 

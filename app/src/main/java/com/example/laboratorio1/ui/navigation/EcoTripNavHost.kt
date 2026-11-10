@@ -1,9 +1,11 @@
 package com.example.laboratorio1.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -21,17 +23,14 @@ import com.example.laboratorio1.viewmodel.EcoTripViewModel
  * Implementa de forma estricta:
  * 1. Rutas declarativas y fuertemente tipadas (Type-Safety) basadas en clases `@Serializable`.
  * 2. Inyección directa de tipos validados en tiempo de compilación (`toRoute<ResumenRoute>()`).
- * 3. Higiene impecable de la pila de transiciones (Back Stack) mediante `popUpTo` con `launchSingleTop`
- *    para destruir instancias redundantes al regresar a la pantalla de inicio.
+ * 3. ViewModel ligado a la entrada del formulario en el Back Stack: al cancelar el itinerario,
+ *    `popUpTo` inclusivo saca esa entrada de la pila y Android llama a `onCleared()`.
  */
 @Composable
 fun EcoTripNavHost(
-    viewModel: EcoTripViewModel,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
     NavHost(
         navController = navController,
         startDestination = FormularioRoute,
@@ -39,6 +38,10 @@ fun EcoTripNavHost(
     ) {
         // Pantalla 1: Formulario de Planificación Resiliente
         composable<FormularioRoute> {
+            // Caso 4: el ViewModel vive mientras esta entrada siga en el Back Stack
+            val viewModel: EcoTripViewModel = viewModel(factory = EcoTripViewModel.Factory)
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
             FormularioScreen(
                 uiState = uiState,
                 onNombreChange = viewModel::onNombreChanged,
@@ -60,17 +63,21 @@ fun EcoTripNavHost(
             // Desempaquetado tipado y seguro mediante Kotlin Serialization
             val route: ResumenRoute = backStackEntry.toRoute()
 
-            ResumenScreen(
-                route = route,
-                onVolverAInicio = {
-                    // Higiene de la pila: destruye el historial previo y evita duplicados con launchSingleTop
-                    navController.navigate(FormularioRoute) {
-                        popUpTo<FormularioRoute> {
-                            inclusive = false
-                        }
-                        launchSingleTop = true
+            // Cancela el itinerario: el formulario anterior sale de la pila y se crea uno limpio
+            val volverAInicio = {
+                navController.navigate(FormularioRoute) {
+                    popUpTo<FormularioRoute> {
+                        inclusive = true
                     }
                 }
+            }
+
+            // El gesto de retroceso del sistema se comporta igual que la flecha de la TopAppBar
+            BackHandler(onBack = volverAInicio)
+
+            ResumenScreen(
+                route = route,
+                onVolverAInicio = volverAInicio
             )
         }
     }

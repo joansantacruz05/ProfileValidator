@@ -8,7 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,10 +27,11 @@ import androidx.compose.material.icons.filled.EnergySavingsLeaf
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -39,6 +41,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -61,7 +64,8 @@ import com.example.laboratorio1.viewmodel.EcoTripUiState
 /**
  * Pantalla 1: Formulario ultra-resiliente y de configuración global de EcoTrip 2026.
  *
- * Implementa un andamiaje estructural complejo mediante Scaffold, TopAppBar y ExtendedFloatingActionButton.
+ * Implementa un andamiaje estructural complejo mediante Scaffold, TopAppBar y un botón inferior
+ * "Planificar Ruta" cuya disponibilidad depende del estado (enabled).
  * Su diseño se basa 100% en Material Design 3 con roles cromáticos semánticos adaptativos.
  *
  * Sometida a resiliencia multinivel:
@@ -130,27 +134,33 @@ fun FormularioScreen(
                 )
             )
         },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = {
-                    onValidarYNavegar()?.let(onRutaGenerada)
-                },
-                icon = {
-                    // El FAB extendido de Material 3 oculta su texto a TalkBack: la etiqueta va en el ícono
+        bottomBar = {
+            // Botón principal fijo abajo, al alcance del pulgar con cualquier mano
+            Surface(tonalElevation = 3.dp) {
+                // Caso 3: el botón se habilita o bloquea según el estado derivado del ViewModel
+                Button(
+                    onClick = {
+                        onValidarYNavegar()?.let(onRutaGenerada)
+                    },
+                    enabled = uiState.botonPlanificarHabilitado,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .heightIn(min = 56.dp)
+                ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Ver resumen"
+                        contentDescription = null,
+                        modifier = Modifier.size(ButtonDefaults.IconSize)
                     )
-                },
-                text = {
+                    Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
                     Text(
-                        text = "Ver resumen",
+                        text = "Planificar Ruta",
                         fontWeight = FontWeight.SemiBold
                     )
-                },
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+                }
+            }
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
@@ -411,10 +421,15 @@ fun FormularioScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         isError = uiState.errorDuracion != null,
                         supportingText = {
-                            uiState.errorDuracion?.let { error ->
-                                Text(
-                                    text = error,
+                            // Caso 5: el texto no numérico no bloquea, solo avisa del valor de rescate
+                            when {
+                                uiState.errorDuracion != null -> Text(
+                                    text = uiState.errorDuracion,
                                     color = MaterialTheme.colorScheme.error
+                                )
+                                uiState.avisoDuracion != null -> Text(
+                                    text = uiState.avisoDuracion,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         },
@@ -456,9 +471,6 @@ fun FormularioScreen(
                     }
                 }
             }
-
-            // Espaciador inferior para evitar que el Extended FAB oculte información al final del scroll
-            Spacer(modifier = Modifier.height(72.dp))
         }
     }
 }

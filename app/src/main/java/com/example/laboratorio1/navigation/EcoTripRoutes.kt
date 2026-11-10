@@ -21,6 +21,7 @@ data object FormularioRoute
  * @property destino Ciudad o reserva natural de destino configurada en el formulario.
  * @property diasDuracion Duración estimada del trayecto expresada en días enteros válidos (> 0).
  * @property esViajeGrupal Modalidad de viaje que determina impacto compartido y logística colectiva.
+ * @property ticketCode Código de reserva obligatorio que se muestra en la tarjeta central del resumen.
  */
 @Serializable
 data class ResumenRoute(
@@ -29,5 +30,6 @@ data class ResumenRoute(
     val soloBajaHuella: Boolean,
     val destino: String,
     val diasDuracion: Int,
-    val esViajeGrupal: Boolean
+    val esViajeGrupal: Boolean,
+    val ticketCode: String
 )
